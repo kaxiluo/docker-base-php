@@ -1,0 +1,69 @@
+version: "3.8"
+
+services: 
+################################################       
+#######PHP7.1-FPM 
+    php7.1-fpm:
+        image: ${DOCKER_USER}/php-fpm:7.1
+        build:
+          context: ./php-fpm
+          args:
+            - CHANGE_SOURCE=false
+            - X_PHP_VERSION=7.1
+            - INSTALL_GD=true
+            - INSTALL_IMAGEMAGICK=false
+            - INSTALL_SWOOLE=false
+            - SWOOLE_VERSION=
+            - INSTALL_XDEBUG=true
+            - INSTALL_XHPROF=false
+#######PHP7.3-FPM  
+    php7.3-fpm:
+        image: ${DOCKER_USER}/php-fpm:7.3
+        build:
+          context: ./php-fpm
+          args:
+            - X_PHP_VERSION=7.3
+            - INSTALL_GD=true
+            - INSTALL_IMAGEMAGICK=false
+            - INSTALL_SWOOLE=false
+            - SWOOLE_VERSION=4.6.3
+            - INSTALL_XDEBUG=false
+            - INSTALL_XHPROF=true
+#######PHP7.4-FPM    
+    php7.4-fpm:
+        image: ${DOCKER_USER}/php-fpm:7.4
+        build:
+          context: ./php-fpm
+          args:
+            - X_PHP_VERSION=7.4
+            - INSTALL_GD=true
+            - INSTALL_IMAGEMAGICK=false
+            - INSTALL_SWOOLE=false
+            - SWOOLE_VERSION=
+            - INSTALL_XDEBUG=false
+            - INSTALL_XHPROF=true
+    
+### PHP-CLI ########################################  
+#######PHP7.1-CLI
+    php7.1-cli:
+        image: ${DOCKER_USER}/php-cli:7.1
+        build:
+          context: ./php-cli
+          args:
+            - X_PHP_VERSION=7.1
+            - INSTALL_GD=true
+            - INSTALL_SWOOLE=true
+            - SWOOLE_VERSION=2.1.3
+            - INSTALL_XDEBUG=false
+
+#######PHP7.4-CLI
+    php7.4-cli:
+        image: ${DOCKER_USER}/php-cli:7.4
+        build:
+          context: ./php-cli
+          args:
+            - X_PHP_VERSION=7.4
+            - INSTALL_GD=true
+            - INSTALL_SWOOLE=true
+            - SWOOLE_VERSION=4.6.6
+            - INSTALL_XDEBUG=false
