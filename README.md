@@ -1,5 +1,9 @@
 # docker
 
-### php-fpm
+`docker-compose build`
 
-## php-cli
+### image
+
+- php-fpm
+
+- php-cli
