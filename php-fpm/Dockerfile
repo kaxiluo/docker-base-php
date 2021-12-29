@@ -75,7 +75,7 @@ COPY src/* /tmp/
 RUN set -ex \
     && cd /tmp \
     # pdo_mysql mysqli ......
-    && docker-php-ext-install pdo_mysql mysqli exif zip sockets pcntl bcmath xsl \
+    && docker-php-ext-install pdo_mysql mysqli exif zip sockets pcntl bcmath xsl intl soap \
     # imap
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install imap \
