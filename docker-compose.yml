@@ -16,6 +16,20 @@ services:
             - SWOOLE_VERSION=
             - INSTALL_XDEBUG=true
             - INSTALL_XHPROF=false
+#######PHP7.2-FPM 
+    php7.2-fpm:
+        image: ${DOCKER_USER}/php-fpm:7.2
+        build:
+          context: ./php-fpm
+          args:
+            - CHANGE_SOURCE=false
+            - X_PHP_VERSION=7.2
+            - INSTALL_GD=true
+            - INSTALL_IMAGEMAGICK=false
+            - INSTALL_SWOOLE=false
+            - SWOOLE_VERSION=
+            - INSTALL_XDEBUG=true
+            - INSTALL_XHPROF=false            
 #######PHP7.3-FPM  
     php7.3-fpm:
         image: ${DOCKER_USER}/php-fpm:7.3
