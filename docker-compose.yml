@@ -55,8 +55,21 @@ services:
             - INSTALL_SWOOLE=false
             - SWOOLE_VERSION=
             - INSTALL_XDEBUG=false
+            - INSTALL_XHPROF=true  
+    php7.4-fpm-bullseye:
+        image: ${DOCKER_USER}/php-fpm:7.4-bullseye
+        build:
+          context: ./php-fpm
+          args:
+            - X_PHP_VERSION=7.4
+            - X_DEBIAN_RELEASE=bullseye
+            - CHANGE_SOURCE=true ## debian阿里镜像
+            - INSTALL_GD=true
+            - INSTALL_IMAGEMAGICK=false
+            - INSTALL_SWOOLE=false
+            - SWOOLE_VERSION=
+            - INSTALL_XDEBUG=false
             - INSTALL_XHPROF=true
-    
 ### PHP-CLI ########################################  
 #######PHP7.1-CLI
     php7.1-cli:

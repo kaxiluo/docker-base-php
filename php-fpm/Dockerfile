@@ -1,52 +1,45 @@
 ARG X_PHP_VERSION
-FROM php:${X_PHP_VERSION}-fpm
+ARG X_DEBIAN_RELEASE=buster
+FROM php:${X_PHP_VERSION}-fpm-${X_DEBIAN_RELEASE}
 
 LABEL maintainer="Linyiyong <linyiyongcn@163.com>"
 
 ARG X_PHP_VERSION
+ARG X_DEBIAN_RELEASE=buster
 
 ARG CHANGE_SOURCE=false
-RUN if [ ${CHANGE_SOURCE} = true ]; then \
-    cd /tmp \
-    && { \
-		# echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster main contrib non-free"; \
-		# echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-updates main contrib non-free"; \
-		# echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-backports main contrib non-free"; \
-		# echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian-security buster/updates main contrib non-free"; \
-        #
-        # echo "deb https://mirrors.huaweicloud.com/debian/ buster main contrib non-free"; \
-        # echo "deb https://mirrors.huaweicloud.com/debian/ buster-updates main contrib non-free"; \
-        # echo "deb https://mirrors.huaweicloud.com/debian/ buster-backports main contrib non-free"; \
-        # echo "deb https://mirrors.huaweicloud.com/debian-security/ buster/updates main contrib non-free"; \
-        # echo "deb-src https://mirrors.huaweicloud.com/debian/ buster main contrib non-free"; \
-        # echo "deb-src https://mirrors.huaweicloud.com/debian/ buster-updates main contrib non-free"; \
-        # echo "deb-src https://mirrors.huaweicloud.com/debian/ buster-backports main contrib non-free"; \
-        #
-        # echo "deb http://mirrors.163.com/debian/ buster main non-free contrib"; \
-        # echo "deb http://mirrors.163.com/debian/ buster-updates main non-free contrib"; \
-        # echo "deb http://mirrors.163.com/debian/ buster-backports main non-free contrib"; \
-        # echo "deb http://mirrors.163.com/debian-security/ buster/updates main non-free contrib"; \
-        # echo "deb-src http://mirrors.163.com/debian/ buster main non-free contrib"; \
-        # echo "deb-src http://mirrors.163.com/debian/ buster-updates main non-free contrib"; \
-        # echo "deb-src http://mirrors.163.com/debian/ buster-backports main non-free contrib"; \
-        # echo "deb-src http://mirrors.163.com/debian-security/ buster/updates main non-free contrib"; \
-        #
-        echo "deb http://mirrors.aliyun.com/debian/ buster main non-free contrib"; \
-        echo "deb-src http://mirrors.cloud.aliyuncs.com/debian/ buster main non-free contrib"; \
-        echo "deb http://mirrors.cloud.aliyuncs.com/debian-security buster/updates main"; \
-        echo "deb-src http://mirrors.cloud.aliyuncs.com/debian-security buster/updates main"; \
-        echo "deb http://mirrors.cloud.aliyuncs.com/debian/ buster-updates main non-free contrib"; \
-        echo "deb-src http://mirrors.cloud.aliyuncs.com/debian/ buster-updates main non-free contrib"; \
-        echo "deb http://mirrors.cloud.aliyuncs.com/debian/ buster-backports main non-free contrib"; \
-        echo "deb-src http://mirrors.cloud.aliyuncs.com/debian/ buster-backports main non-free contrib"; \
-	} > /etc/apt/sources.list \
-    #&& sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list \
-    #&& sed -i 's/security.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list \
-    #&& sed -i 's/security-cdn.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list
-;fi
+RUN if [ ${CHANGE_SOURCE} = true ] && ["${X_DEBIAN_RELEASE}" = "buster"]; then \
+        cd /tmp \
+        && cp /etc/apt/sources.list /etc/apt/sources.list.bak \
+        && { \
+            echo "deb http://mirrors.aliyun.com/debian/ buster main non-free contrib"; \
+            echo "deb-src http://mirrors.aliyun.com/debian/ buster main non-free contrib"; \
+            echo "deb http://mirrors.aliyun.com/debian-security buster/updates main"; \
+            echo "deb-src http://mirrors.aliyun.com/debian-security buster/updates main"; \
+            echo "deb http://mirrors.aliyun.com/debian/ buster-updates main non-free contrib"; \
+            echo "deb-src http://mirrors.aliyun.com/debian/ buster-updates main non-free contrib"; \
+            echo "deb http://mirrors.aliyun.com/debian/ buster-backports main non-free contrib"; \
+            echo "deb-src http://mirrors.aliyun.com/debian/ buster-backports main non-free contrib"; \
+        } > /etc/apt/sources.list \
+    ;elif [ ${CHANGE_SOURCE} = true ] && ["${X_DEBIAN_RELEASE}" = "bullseye"]; then \
+        cd /tmp \
+        && cp /etc/apt/sources.list /etc/apt/sources.list.bak \
+        && { \
+            echo "deb http://mirrors.aliyun.com/debian/ bullseye main non-free contrib"; \
+            echo "deb-src http://mirrors.aliyun.com/debian/ bullseye main non-free contrib"; \
+            echo "deb http://mirrors.aliyun.com/debian-security/ bullseye-security main"; \
+            echo "deb-src http://mirrors.aliyun.com/debian-security/ bullseye-security main"; \
+            echo "deb http://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib"; \
+            echo "deb-src http://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib"; \
+            echo "deb http://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib"; \
+            echo "deb-src http://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib"; \
+        } > /etc/apt/sources.list \
+    ;elif [ ${CHANGE_SOURCE} = true ] ; then \
+        sed -i -E 's/(deb|security).debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list \
+    ;fi
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=PRC
+ENV TZ=Asia/Shanghai
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
