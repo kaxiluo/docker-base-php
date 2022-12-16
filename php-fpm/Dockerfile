@@ -50,129 +50,120 @@ RUN set -xe \
     && apt-get install -y --no-install-recommends \
       apt-utils  \
       telnet net-tools procps iputils-ping \
-      vim git wget
+      vim git wget curl
 
 RUN set -eux \
     &&  apt-get update -y \
     && apt-get install -y --no-install-recommends \
-            autoconf libzip-dev zip unzip \
+            autoconf \
+            # zip
+            libzip-dev zip unzip \
             libmemcached-dev libz-dev libpq-dev \
             libjpeg-dev libpng-dev  libfreetype6-dev libwebp-dev \
             libssl-dev libmcrypt-dev  libonig-dev \
-            libc-client-dev libkrb5-dev \
-            libxslt-dev librabbitmq-dev
+            # xsl
+            libxslt-dev
 
+# only use
+# composer-2.2.x-for-php5.3-7.1.phar
 COPY src/* /tmp/
 
-# php ext
+#######################
+# PHP EXT
+#######################
+
+# pdo_mysql mysqli exif zip bcmath xsl intl soap opcache sockets pcntl
 RUN set -ex \
     && cd /tmp \
-    # pdo_mysql mysqli ......
-    && docker-php-ext-install pdo_mysql mysqli exif zip sockets pcntl bcmath xsl intl soap \
-    # imap
-    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install imap \
-    # source extract
-    && docker-php-source extract \
-    # redis
-    && tar -zxvf redis-5.3.2.tgz \ 
-    && mv redis-5.3.2 /usr/src/php/ext/redis \
-    && docker-php-ext-install redis \
-    # igbinary
-    && tar -zxvf igbinary-3.1.6.tgz \ 
-    && mv igbinary-3.1.6 /usr/src/php/ext/igbinary \
-    && docker-php-ext-install igbinary \
-    # amqp  
-    && tar -zxvf amqp-1.10.2.tgz \
-    && mv amqp-1.10.2 /usr/src/php/ext/amqp \
-    && docker-php-ext-install amqp \
-    # mailparse  
-    && tar -zxvf mailparse-3.1.1.tgz \
-    && mv mailparse-3.1.1 /usr/src/php/ext/mailparse \
-    && docker-php-ext-install mailparse \
-    # mongodb  
-    && tar -zxvf mongodb-1.9.1.tgz \
-    && mv mongodb-1.9.1 /usr/src/php/ext/mongodb \
-    && docker-php-ext-install mongodb
+    && docker-php-ext-install pdo_mysql mysqli exif zip bcmath xsl intl soap opcache sockets pcntl
+
+RUN docker-php-source extract
 
 # GD
-ARG INSTALL_GD=false
-RUN if [ ${INSTALL_GD} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ]; then \
-      docker-php-ext-configure gd --with-freetype --with-jpeg; \
+RUN if [ ${X_PHP_VERSION} = "7.4" ] || [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+        docker-php-ext-configure gd \
+            --prefix=/usr \
+            --with-jpeg \
+            --with-webp \
+            --with-freetype; \
     else \
-      docker-php-ext-configure gd --with-freetype-dir=/usr/lib/ --with-jpeg-dir=/usr/lib/ --with-png-dir=/usr/lib/; \
+        docker-php-ext-configure gd \
+            --with-jpeg-dir=/usr/lib \
+            --with-webp-dir=/usr/lib \
+            --with-png-dir=/usr/lib \
+            --with-freetype-dir=/usr/include/freetype2; \
     fi; \
-    docker-php-ext-install gd \
-;fi
+    docker-php-ext-install gd
 
-# imagick
-ARG INSTALL_IMAGEMAGICK=false
-RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
-    #pecl install imagick; \
-    #docker-php-ext-enable imagick \
-    cd /tmp && \
-    apt-get install libmagickcore-dev libmagickwand-dev && \
-    tar -zxvf imagick-3.5.1.tgz && \
-    mv imagick-3.5.1 /usr/src/php/ext/imagick \
-    && docker-php-ext-install imagick \
-;fi
+## redis 
+RUN if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
+      pecl install -o -f redis-4.3.0; \
+    else \
+      pecl install -o -f redis; \
+    fi \
+    && rm -rf /tmp/pear \
+    && docker-php-ext-enable redis
+# igbinary
+RUN pecl install igbinary \
+   && docker-php-ext-enable igbinary
 
-## swoole
-ARG INSTALL_SWOOLE=false
-ARG SWOOLE_VERSION=4.6.3
-RUN if [ ${INSTALL_SWOOLE} = true ]; then \
-    cd /tmp && \
-    tar -zxvf swoole-${SWOOLE_VERSION}.tgz && \
-    mv swoole-${SWOOLE_VERSION} /usr/src/php/ext/swoole \
-    && docker-php-ext-configure swoole --enable-openssl --enable-sockets --enable-http2 --enable-mysqlnd \
-    && docker-php-ext-install swoole \
-;fi
+# AMQP
+RUN set -eux; \
+    apt-get -yqq install librabbitmq-dev; \
+    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+        pecl install amqp-1.11.0; \
+    else \
+        pecl install amqp; \
+    fi; \
+    docker-php-ext-enable amqp; \
+    php -m | grep -oiE '^amqp$'
 
-## xdebug
-ARG INSTALL_XDEBUG=false
-RUN if [ ${INSTALL_XDEBUG} = true ]; then \ 
-    cd /tmp \
-    #pecl install xdebug-2.9.8 \
-    #docker-php-ext-enable xdebug \
-    #wget -O xdebug-2.9.8.tar.gz https://github.com/xdebug/xdebug/archive/2.9.8.tar.gz \
-    && tar -zxvf xdebug-2.9.8.tgz \
-    && mv xdebug-2.9.8 /usr/src/php/ext/xdebug \
-    && docker-php-ext-install xdebug \
-;fi
+# mongodb
+RUN if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
+      pecl install mongo; \
+      docker-php-ext-enable mongo; \
+      php -m | grep -oiE '^mongo$'; \
+    else \
+      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ] ;}; then \
+        pecl install mongodb-1.9.2; \
+      else \
+        pecl install mongodb; \
+      fi; \
+      docker-php-ext-enable mongodb; \
+      php -m | grep -oiE '^mongodb$'; \
+    fi;
 
-## xhprof
-ARG INSTALL_XHPROF=false
-RUN if [ ${INSTALL_XHPROF} = true ]; then \
-    cd /tmp \
-    # curl -L -o /tmp/xhprof.tar.gz "https://github.com/tideways/php-xhprof-extension/archive/v5.0.1.tar.gz"; \
-    && mkdir -p xhprof \
-    && tar -C xhprof -zxvf /tmp/php-xhprof-extension-5.0.4.tar.gz --strip 1 \
-    && ( \
-        cd xhprof \
-        && phpize \
-        && ./configure \
-        && make \
-        && make install \
-    ) \
-;fi
-
-COPY ./xhprof.ini /usr/local/etc/php/conf.d
-
-RUN if [ ${INSTALL_XHPROF} = false ]; then \
-    rm /usr/local/etc/php/conf.d/xhprof.ini \
-;fi
+# imap    
+RUN apt-get install -yqq libc-client-dev libkrb5-dev && \
+    docker-php-ext-configure imap --with-kerberos --with-imap-ssl && \
+    docker-php-ext-install imap
+# mailparse
+RUN if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
+      echo 'todo'; \
+    else \
+      rm -rf /tmp/pear; \
+      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "2" ];}; then \
+        pecl install mailparse-3.1.3; \
+      else \
+        pecl install -o -f mailparse; \
+      fi; \
+      docker-php-ext-enable mailparse; \
+    fi;
 
 # Composer
-RUN set -ex \
-    && cd /tmp \
+RUN set -ex && \
+    cd /tmp && \
     #&& wget https://mirrors.aliyun.com/composer/composer.phar \
-    # b2c code can work for 1.9.0
     #&& wget https://getcomposer.org/download/1.9.0/composer.phar \
-    && mv composer-1.9.0.phar /usr/local/bin/composer \
-    && chmod u+x /usr/local/bin/composer \
-    && composer config -g repo.packagist composer https://mirrors.aliyun.com/composer \
-    && echo 'export PATH="$PATH:$HOME/.composer/vendor/bin"' >> ~/.bashrc
+    if [ ${X_PHP_VERSION} = "7.1" ]; then \
+        mv composer-2.2.x-for-php5.3-7.1.phar /usr/local/bin/composer; \
+    else \
+        wget -O composer-latest.phar https://mirrors.aliyun.com/composer/composer.phar && \
+        mv composer-latest.phar /usr/local/bin/composer; \
+    fi && \
+    chmod u+x /usr/local/bin/composer && \
+    composer config -g repo.packagist composer https://mirrors.aliyun.com/composer && \
+    echo 'export PATH="$PATH:$HOME/.composer/vendor/bin"' >> ~/.bashrc
 
 # Check
 RUN set -ex \
