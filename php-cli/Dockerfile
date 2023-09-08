@@ -108,15 +108,19 @@ RUN pecl install igbinary \
    && docker-php-ext-enable igbinary
 
 # AMQP
-RUN set -eux; \
+RUN set -eux; \ 
     apt-get -yqq install librabbitmq-dev; \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-        pecl install amqp-1.11.0; \
+    if [ ${X_PHP_VERSION} = "7.3" ] \
+    || [ ${X_PHP_VERSION} = "7.2" ] \
+    || [ ${X_PHP_VERSION} = "7.1" ] \
+    || [ ${X_PHP_VERSION} = "7.0" ] \
+    || [ ${X_PHP_VERSION} = "5.6" ]; then \
+    pecl install amqp-1.11.0; \
     else \
-        pecl install amqp; \
+    pecl install amqp; \
     fi; \
     docker-php-ext-enable amqp; \
-    php -m | grep -oiE '^amqp$'
+    php -m | grep -oiE '^amqp$';
 
 # mongodb
 RUN if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \

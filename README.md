@@ -10,6 +10,8 @@
 
 `docker-compose build php7.4-fpm`
 
+`docker-compose build php7.4-fpm-bullseye`
+
 `docker-compose build php8.2-fpm`
 
 ## php-cli
@@ -19,3 +21,9 @@
 `docker-compose build php7.4-cli`
 
 `docker-compose build php8.2-cli`
+
+## push
+
+`docker login`
+
+`docker push linyiyong/php-fpm:7.1`
